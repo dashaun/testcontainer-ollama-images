@@ -1,0 +1,106 @@
+name: Update Ollama Images
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 06:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      ollama_version:
+        description: 'Ollama version to force-build (e.g. 0.32.9). Leave empty for auto-detect.'
+        required: false
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # To add an image, add an entry here — no new repository needed.
+          # `package` is the GHCR package name and must match the repository's last segment.
+          - package: testcontainer-ollama-phi4-mini
+            models: "phi4-mini,nomic-embed-text:latest"
+          - package: testcontainer-ollama-llama3.2_3b
+            models: "llama3.2:3b,nomic-embed-text:latest"
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Get latest ollama/ollama semver tag from Docker Hub
+        id: ollama
+        run: |
+          VERSION=$(curl -s "https://hub.docker.com/v2/repositories/ollama/ollama/tags?ordering=last_updated&page_size=25" \
+            | jq -r '.results[].name' \
+            | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -1)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Latest ollama version: ${VERSION}"
+
+      - name: Get our latest published version from GHCR
+        id: ours
+        run: |
+          BUILT=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
+            "https://api.github.com/users/dashaun/packages/container/${{ matrix.package }}/versions" \
+            | jq -r '.[].metadata.container.tags[]' \
+            | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -1 || echo "none")
+          echo "built=${BUILT}" >> $GITHUB_OUTPUT
+          echo "Our latest built version for ${{ matrix.package }}: ${BUILT}"
+
+      - name: Check if build is needed
+        id: check
+        run: |
+          FORCE="${{ github.event.inputs.ollama_version }}"
+          LATEST="${{ steps.ollama.outputs.version }}"
+          BUILT="${{ steps.ours.outputs.built }}"
+          if [ -n "${FORCE}" ]; then
+            echo "Force-building version: ${FORCE}"
+            echo "needed=true" >> $GITHUB_OUTPUT
+            echo "target=${FORCE}" >> $GITHUB_OUTPUT
+          elif [ "${LATEST}" != "${BUILT}" ]; then
+            echo "New ollama version detected: ${LATEST} (we have: ${BUILT})"
+            echo "needed=true" >> $GITHUB_OUTPUT
+            echo "target=${LATEST}" >> $GITHUB_OUTPUT
+          else
+            echo "Already up to date at ${BUILT}. Skipping."
+            echo "needed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/setup-java@v5
+        if: steps.check.outputs.needed == 'true'
+        with:
+          java-version: '17'
+          distribution: 'liberica'
+          cache: 'maven'
+
+      - name: Build jar
+        if: steps.check.outputs.needed == 'true'
+        run: mvn -q package -DskipTests
+
+      - name: Log in to GHCR
+        if: steps.check.outputs.needed == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate and commit image
+        if: steps.check.outputs.needed == 'true'
+        run: |
+          java -jar target/*.jar generate \
+            --models '${{ matrix.models }}' \
+            --repository ghcr.io/dashaun/${{ matrix.package }} \
+            --ollamaVersion ${{ steps.check.outputs.target }}
+
+      - name: Push versioned tag
+        if: steps.check.outputs.needed == 'true'
+        run: docker push ghcr.io/dashaun/${{ matrix.package }}:${{ steps.check.outputs.target }}
+
+      - name: Push latest tag
+        if: steps.check.outputs.needed == 'true'
+        run: docker push ghcr.io/dashaun/${{ matrix.package }}:latest
