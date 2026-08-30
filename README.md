@@ -1,5 +1,11 @@
 # testcontainer-ollama-images
 
+[![CI](https://github.com/dashaun/testcontainer-ollama-images/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/dashaun/testcontainer-ollama-images/actions/workflows/ci.yml)
+[![Update Ollama Images](https://github.com/dashaun/testcontainer-ollama-images/actions/workflows/update-image.yml/badge.svg?branch=main)](https://github.com/dashaun/testcontainer-ollama-images/actions/workflows/update-image.yml)
+[![Java 17](https://img.shields.io/badge/Java-17-007396?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
+[![GHCR](https://img.shields.io/badge/images-GHCR-blue?logo=github)](https://github.com/dashaun?tab=packages)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 A Spring Shell CLI that builds pre-warmed [Ollama](https://ollama.com) Docker images with models baked in. You pick the models and the target image name, so one application produces every image you need — no repository per model. The images are published to the GitHub Container Registry so workshops and CI environments can pull a ready-to-use image instead of downloading models at runtime.
 
 ## Published images
@@ -162,6 +168,10 @@ they are meant to be pulled anonymously.
 See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Use the structured GitHub issue
 forms for bugs, feature requests, and project questions. Report vulnerabilities privately as
 described in [SECURITY.md](SECURITY.md); other support guidance is in [SUPPORT.md](SUPPORT.md).
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
 
 ## Stack
 

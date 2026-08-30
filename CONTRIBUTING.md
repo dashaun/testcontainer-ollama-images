@@ -38,3 +38,7 @@ users. Do not push generated container images from tests or development unless e
 - Keep history linear; rebase instead of adding merge commits.
 - Submit changes through a pull request. Direct changes to `main` are not accepted.
 - Ensure all required status checks pass.
+- Confirm that your contribution is compatible with the Apache License 2.0.
+
+By submitting a contribution, you agree that it may be distributed under this project's
+[Apache License 2.0](LICENSE).
