@@ -26,6 +26,8 @@ jobs:
             models: "phi4-mini,nomic-embed-text:latest"
           - package: testcontainer-ollama-llama3.2_3b
             models: "llama3.2:3b,nomic-embed-text:latest"
+          - package: testcontainer-ollama-smollm2-135m
+            models: "smollm2:135m-instruct-q4_0"
 
     steps:
       - uses: actions/checkout@v7
@@ -96,6 +98,13 @@ jobs:
             --models '${{ matrix.models }}' \
             --repository ghcr.io/dashaun/${{ matrix.package }} \
             --ollamaVersion ${{ steps.check.outputs.target }}
+
+      - name: Validate pre-warmed SmolLM2 image
+        if: steps.check.outputs.needed == 'true' && matrix.package == 'testcontainer-ollama-smollm2-135m'
+        run: >-
+          mvn -q test
+          -Dtest=SmolLm2ImageTest
+          -Dollama.image=ghcr.io/dashaun/${{ matrix.package }}:${{ steps.check.outputs.target }}
 
       - name: Push versioned tag
         if: steps.check.outputs.needed == 'true'
