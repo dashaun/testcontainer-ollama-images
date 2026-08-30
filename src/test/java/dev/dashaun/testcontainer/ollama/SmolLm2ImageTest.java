@@ -17,55 +17,51 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class SmolLm2ImageTest {
 
-    private static final String MODEL = "smollm2:135m-instruct-q4_0";
-    private static final ObjectMapper JSON = new ObjectMapper();
+	private static final String MODEL = "smollm2:135m-instruct-q4_0";
 
-    @Test
-    @EnabledIfSystemProperty(named = "ollama.image", matches = ".+")
-    void preWarmedImageListsModelAndAnswersChatRequest() throws Exception {
-        String imageName = System.getProperty("ollama.image");
-        DockerImageName image = DockerImageName.parse(imageName)
-                .asCompatibleSubstituteFor("ollama/ollama");
+	private static final ObjectMapper JSON = new ObjectMapper();
 
-        new ImageGeneratorCommand().configureDockerHost();
-        try (OllamaContainer ollama = new OllamaContainer(image)) {
-            // OllamaContainer.start() waits for the server's readiness endpoint.
-            ollama.start();
+	@Test
+	@EnabledIfSystemProperty(named = "ollama.image", matches = ".+")
+	void preWarmedImageListsModelAndAnswersChatRequest() throws Exception {
+		String imageName = System.getProperty("ollama.image");
+		DockerImageName image = DockerImageName.parse(imageName).asCompatibleSubstituteFor("ollama/ollama");
 
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
+		new ImageGeneratorCommand().configureDockerHost();
+		try (OllamaContainer ollama = new OllamaContainer(image)) {
+			// OllamaContainer.start() waits for the server's readiness endpoint.
+			ollama.start();
 
-            JsonNode tags = getJson(client, ollama.getEndpoint() + "/api/tags");
-            assertThat(tags.path("models"))
-                    .anySatisfy(model -> assertThat(model.path("name").asText()).isEqualTo(MODEL));
+			HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
-            String requestBody = JSON.createObjectNode()
-                    .put("model", MODEL)
-                    .put("stream", false)
-                    .set("messages", JSON.createArrayNode().add(
-                            JSON.createObjectNode().put("role", "user").put("content", "Reply with one word.")))
-                    .toString();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(ollama.getEndpoint() + "/api/chat"))
-                    .timeout(Duration.ofMinutes(2))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+			JsonNode tags = getJson(client, ollama.getEndpoint() + "/api/tags");
+			assertThat(tags.path("models"))
+				.anySatisfy(model -> assertThat(model.path("name").asText()).isEqualTo(MODEL));
 
-            assertThat(response.statusCode()).isEqualTo(200);
-            assertThat(JSON.readTree(response.body()).path("message").path("content").asText())
-                    .isNotBlank();
-        }
-    }
+			String requestBody = JSON.createObjectNode()
+				.put("model", MODEL)
+				.put("stream", false)
+				.set("messages",
+						JSON.createArrayNode()
+							.add(JSON.createObjectNode().put("role", "user").put("content", "Reply with one word.")))
+				.toString();
+			HttpRequest request = HttpRequest.newBuilder(URI.create(ollama.getEndpoint() + "/api/chat"))
+				.timeout(Duration.ofMinutes(2))
+				.header("Content-Type", "application/json")
+				.POST(HttpRequest.BodyPublishers.ofString(requestBody))
+				.build();
+			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-    private JsonNode getJson(HttpClient client, String url) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .timeout(Duration.ofSeconds(30))
-                .GET()
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).isEqualTo(200);
-        return JSON.readTree(response.body());
-    }
+			assertThat(response.statusCode()).isEqualTo(200);
+			assertThat(JSON.readTree(response.body()).path("message").path("content").asText()).isNotBlank();
+		}
+	}
+
+	private JsonNode getJson(HttpClient client, String url) throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(30)).GET().build();
+		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+		assertThat(response.statusCode()).isEqualTo(200);
+		return JSON.readTree(response.body());
+	}
+
 }

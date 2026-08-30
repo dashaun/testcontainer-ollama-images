@@ -157,6 +157,12 @@ cancelling the other images.
 Newly created packages are **private** by default. Make them public from the same settings page if
 they are meant to be pulled anonymously.
 
+## Contributing and Support
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Use the structured GitHub issue
+forms for bugs, feature requests, and project questions. Report vulnerabilities privately as
+described in [SECURITY.md](SECURITY.md); other support guidance is in [SUPPORT.md](SUPPORT.md).
+
 ## Stack
 
 | Component | Version |
