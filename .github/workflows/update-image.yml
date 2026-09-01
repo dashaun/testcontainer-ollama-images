@@ -29,6 +29,8 @@ jobs:
             models: "llama3.2:3b,nomic-embed-text:latest"
           - package: testcontainer-ollama-smollm2-135m
             models: "smollm2:135m-instruct-q4_0"
+          - package: testcontainer-ollama-qwen3-8b
+            models: "qwen3:8b"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

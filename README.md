@@ -14,6 +14,7 @@ A Spring Shell CLI that builds pre-warmed [Ollama](https://ollama.com) Docker im
 ghcr.io/dashaun/testcontainer-ollama-phi4-mini:latest
 ghcr.io/dashaun/testcontainer-ollama-llama3.2_3b:latest
 ghcr.io/dashaun/testcontainer-ollama-smollm2-135m:latest
+ghcr.io/dashaun/testcontainer-ollama-qwen3-8b:latest
 ```
 
 Each also carries a version tag matching the Ollama release it was built from, e.g.
